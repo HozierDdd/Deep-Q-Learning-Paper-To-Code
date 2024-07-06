@@ -28,7 +28,7 @@ if __name__ == '__main__':
                             help='Batch size for replay memory sampling')
     parser.add_argument('-replace', type=int, default=1000,
                         help='interval for replacing target network')
-    parser.add_argument('-env', type=str, default='PongNoFrameskip-v4',
+    parser.add_argument('-env', type=str, default='LunarLander-v2',
                             help='Atari environment.\nPongNoFrameskip-v4\n \
                                   BreakoutNoFrameskip-v4\n \
                                   SpaceInvadersNoFrameskip-v4\n \
@@ -51,6 +51,8 @@ if __name__ == '__main__':
 
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
+    print(args)
 
     env = make_env(env_name=args.env, repeat=args.repeat,
                   clip_rewards=args.clip_rewards, no_ops=args.no_ops,
@@ -89,7 +91,7 @@ if __name__ == '__main__':
         score = 0
         while not done:
             action = agent.choose_action(observation)
-            observation_, reward, done, info = env.step(action)
+            observation_, reward, done, truncated, info = env.step(action)
             score += reward
 
             if not args.load_checkpoint:

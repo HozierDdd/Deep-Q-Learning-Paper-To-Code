@@ -3,6 +3,7 @@ import torch as T
 from deep_q_network import DeepQNetwork
 from replay_memory import ReplayBuffer
 
+
 class DQNAgent(object):
     def __init__(self, gamma, epsilon, lr, n_actions, input_dims,
                  mem_size, batch_size, eps_min=0.01, eps_dec=5e-7,
@@ -25,18 +26,18 @@ class DQNAgent(object):
         self.memory = ReplayBuffer(mem_size, input_dims, n_actions)
 
         self.q_eval = DeepQNetwork(self.lr, self.n_actions,
-                                    input_dims=self.input_dims,
-                                    name=self.env_name+'_'+self.algo+'_q_eval',
-                                    chkpt_dir=self.chkpt_dir)
+                                   input_dims=self.input_dims,
+                                   name=self.env_name + '_' + self.algo + '_q_eval',
+                                   chkpt_dir=self.chkpt_dir)
 
         self.q_next = DeepQNetwork(self.lr, self.n_actions,
-                                    input_dims=self.input_dims,
-                                    name=self.env_name+'_'+self.algo+'_q_next',
-                                    chkpt_dir=self.chkpt_dir)
+                                   input_dims=self.input_dims,
+                                   name=self.env_name + '_' + self.algo + '_q_next',
+                                   chkpt_dir=self.chkpt_dir)
 
     def choose_action(self, observation):
         if np.random.random() > self.epsilon:
-            state = T.tensor([observation],dtype=T.float).to(self.q_eval.device)
+            state = T.tensor([observation], dtype=T.float).to(self.q_eval.device)
             actions = self.q_eval.forward(state)
             action = T.argmax(actions).item()
         else:
@@ -49,7 +50,7 @@ class DQNAgent(object):
 
     def sample_memory(self):
         state, action, reward, new_state, done = \
-                                self.memory.sample_buffer(self.batch_size)
+            self.memory.sample_buffer(self.batch_size)
 
         states = T.tensor(state).to(self.q_eval.device)
         rewards = T.tensor(reward).to(self.q_eval.device)
@@ -65,7 +66,7 @@ class DQNAgent(object):
 
     def decrement_epsilon(self):
         self.epsilon = self.epsilon - self.eps_dec \
-                           if self.epsilon > self.eps_min else self.eps_min
+            if self.epsilon > self.eps_min else self.eps_min
 
     def save_models(self):
         self.q_eval.save_checkpoint()
@@ -90,7 +91,7 @@ class DQNAgent(object):
         q_next = self.q_next.forward(states_).max(dim=1)[0]
 
         q_next[dones] = 0.0
-        q_target = rewards + self.gamma*q_next
+        q_target = rewards + self.gamma * q_next
 
         loss = self.q_eval.loss(q_target, q_pred).to(self.q_eval.device)
         loss.backward()

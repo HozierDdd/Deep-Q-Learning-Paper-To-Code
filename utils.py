@@ -54,7 +54,8 @@ class RepeatActionAndMaxFrame(gym.Wrapper):
         t_reward = 0.0
         done = False
         for i in range(self.repeat):
-            obs, reward, done, info = self.env.step(action)
+            # obs, reward, done, info = self.env.step(action)
+            obs, reward, done, truncated, info = self.env.step(action)
             if self.clip_reward:
                 reward = np.clip(np.array([reward]), -1, 1)[0]
             t_reward += reward
@@ -64,7 +65,7 @@ class RepeatActionAndMaxFrame(gym.Wrapper):
                 break
 
         max_frame = np.maximum(self.frame_buffer[0], self.frame_buffer[1])
-        return max_frame, t_reward, done, info
+        return max_frame, t_reward, done, truncated, info
 
     def reset(self):
         obs = self.env.reset()
@@ -91,7 +92,11 @@ class PreprocessFrame(gym.ObservationWrapper):
                                                 shape=self.shape, dtype=np.float32)
 
     def observation(self, obs):
-        new_frame = cv2.cvtColor(obs, cv2.COLOR_RGB2GRAY)
+        if obs.ndim == 3 and obs.shape[2] == 3:  # Check if it's a 3-channel image
+            new_frame = cv2.cvtColor(obs, cv2.COLOR_RGB2GRAY)
+        else:
+            new_frame = obs  # Already grayscale
+        # new_frame = cv2.cvtColor(obs, cv2.COLOR_RGB2GRAY)
         resized_screen = cv2.resize(new_frame, self.shape[1:],
                                     interpolation=cv2.INTER_AREA)
         new_obs = np.array(resized_screen, dtype=np.uint8).reshape(self.shape)
@@ -112,9 +117,13 @@ class StackFrames(gym.ObservationWrapper):
         self.stack.clear()
         observation = self.env.reset()
         for _ in range(self.stack.maxlen):
-            self.stack.append(observation)
-
-        return np.array(self.stack).reshape(self.observation_space.low.shape)
+            self.stack.append(observation[0])
+        # print(self.stack)
+        array_stack = np.array(self.stack)
+        # print(array_stack.shape)
+        reshape_array_stack = array_stack.reshape(self.observation_space.low.shape)
+        # print(reshape_array_stack)
+        return reshape_array_stack
 
     def observation(self, observation):
         self.stack.append(observation)
